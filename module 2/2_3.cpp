@@ -1,38 +1,44 @@
 #include <iostream>
 #include <stack>
-#include <functional>
 
-
-// Дано число N ≤ 10^4 и последовательность целых чисел из [-2^31..2^31] длиной N. 
-// Требуется построить бинарное дерево, заданное наивным порядком вставки. 
-// Т.е., при добавлении очередного числа K в дерево с корнем root, если root→Key ≤ K, 
-// то узел K добавляется в правое поддерево root; иначе в левое поддерево root. 
+// Дано число N ≤ 10^4 и последовательность целых чисел из [-2^31..2^31] длиной N.
+// Требуется построить бинарное дерево, заданное наивным порядком вставки.
+// Т.е., при добавлении очередного числа K в дерево с корнем root, если root→Key ≤ K,
+// то узел K добавляется в правое поддерево root; иначе в левое поддерево root.
 // Выведите элементы в порядке post-order (снизу вверх).
 // Рекурсия запрещена.
 
+template <typename T>
+class Less {
+ public:
+    bool operator()(const T& l, const T& r) {
+        return l <= r;
+    }
+};
 
-// Узел дерева
 struct TreeNode {
     int key;
     TreeNode* left;
     TreeNode* right;
 
-    TreeNode(int k) : key(k), left(nullptr), right(nullptr) {}
+    explicit TreeNode(int k) : key(k), left(nullptr), right(nullptr) {}
 };
 
-// Класс бинарного дерева
+
+template <typename T, typename Comparator = Less<T>>
 class BinaryTree {
-private:
+ private:
     TreeNode* root;
-    std::function<bool(int, int)> compare;
+    Comparator cmp;
 
-public:
-    // Конструктор с функцией сравнения
-    BinaryTree(std::function<bool(int, int)> cmp = [](int a, int b) { return a < b; }) : root(nullptr), compare(cmp) {}
+ public:
+    BinaryTree() : root(nullptr) {}
+    ~BinaryTree() { clear(root); }
+    BinaryTree(const BinaryTree &p) = delete;
+    BinaryTree& operator=(const BinaryTree &p) = delete;
 
-    void insert(int key) {
+    void insert(const T& key) {
         TreeNode* newNode = new TreeNode(key);
-
         if (!root) {
             root = newNode;
             return;
@@ -40,7 +46,7 @@ public:
 
         TreeNode* current = root;
         while (true) {
-            if (compare(key, current->key)) {
+            if (cmp(key, current->key)) {
                 if (!current->left) {
                     current->left = newNode;
                     return;
@@ -57,12 +63,12 @@ public:
     }
 
     void post_order() const {
-        if (!root) 
+        if (!root)
             return;
 
         std::stack<TreeNode*> stack;
         TreeNode* current = root;
-        TreeNode* lastVisited = nullptr;
+        TreeNode* last = nullptr;
 
         while (!stack.empty() || current) {
             if (current) {
@@ -70,11 +76,11 @@ public:
                 current = current->left;
             } else {
                 TreeNode* node = stack.top();
-                if (node->right && lastVisited != node->right) {
+                if (node->right && last != node->right) {
                     current = node->right;
                 } else {
                     std::cout << node->key << " ";
-                    lastVisited = node;
+                    last = node;
                     stack.pop();
                 }
             }
@@ -88,12 +94,10 @@ public:
         clear(node->right);
         delete node;
     }
-
-    ~BinaryTree() { clear(root); }
 };
 
 int main() {
-    BinaryTree tree([](int a, int b) { return a <= b; });
+    BinaryTree<int> tree;
 
     int N;
     std::cin >> N;
@@ -105,6 +109,5 @@ int main() {
     }
 
     tree.post_order();
-
     return 0;
 }
